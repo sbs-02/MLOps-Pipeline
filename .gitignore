@@ -21,7 +21,7 @@ data/simulated/*
 !data/*/.gitkeep
 !data/.gitkeep
 warehouse/
-models/
+/models/
 artifacts/
 
 # Generated reports (keep provenance record)
@@ -31,7 +31,10 @@ reports/*.html
 
 # dbt
 dbt_project/target/
+dbt_project/logs/
 dbt_project/dbt_packages/
+profiles.yml
+.user.yml
 
 # Airflow
 dags/__pycache__/

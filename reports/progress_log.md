@@ -56,6 +56,18 @@ One entry per gate: date, status, commit, and what was verified.
   declares `duckdb>=1.0.0` with no upper bound but pins 1.5.5 in its `md` extra.
 - Wrote `reports/ducklake_verification.md` (overall PASS).
 
+## Gate 5 - dbt project setup + DuckLake attach proof (2026-10-26)
+
+- Created `dbt_project/` with `dbt_project.yml`, staging source/model/schema, a
+  `generate_schema_name` macro, and `macros/`.
+- Created `profiles.yml.example` (tracked) and a local `profiles.yml` (Git-ignored).
+- Attached the DuckLake catalog (`ducklake:warehouse/ducklake/catalog.duckdb`) to dbt
+  with `is_ducklake: true`, read/write; models materialize into `ducklake.stg`.
+- `dbt debug` passes (connection OK, DuckLake attach OK).
+- `stg_ga_sessions` view builds with 903,653 rows; 3 `not_null` tests pass.
+- Added `tests/integration/test_dbt_smoke.py` (5 tests, all green).
+- Wrote `reports/dbt_debug.md`.
+
 ## Next
 
-Gate 5 - dbt transformations and data quality (after Gate 4 is committed and approved).
+Gate 6 - full dbt model layers, quality tests and documentation (after Gate 5 is committed and approved).

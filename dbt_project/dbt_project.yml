@@ -1,0 +1,28 @@
+name: "analytics_ml"
+version: "1.0.0"
+config-version: 2
+
+profile: "mlops"
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  analytics_ml:
+    staging:
+      +materialized: view
+      +schema: stg
+      +database: ducklake
+    marts:
+      +materialized: table
+      +schema: marts
+      +database: ducklake

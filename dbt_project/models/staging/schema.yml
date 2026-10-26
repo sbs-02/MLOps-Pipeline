@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: stg_ga_sessions
+    description: "One row per GA session, normalized from the DuckLake raw table."
+    columns:
+      - name: fullVisitorId
+        description: "Visitor identifier."
+        tests:
+          - not_null
+      - name: visitId
+        description: "Visit identifier."
+        tests:
+          - not_null
+      - name: date
+        description: "Session date as YYYYMMDD string."
+        tests:
+          - not_null
+      - name: is_conversion
+        description: "Target label: session had at least one transaction."

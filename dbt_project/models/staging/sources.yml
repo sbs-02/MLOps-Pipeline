@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: ducklake_raw
+    database: ducklake
+    schema: raw
+    description: "Raw GA sessions loaded into the DuckLake catalog (Gate 4)."
+    tables:
+      - name: ga_sessions
+        description: "One row per GA session; nested BigQuery structs preserved."
+        columns:
+          - name: fullVisitorId
+            description: "Visitor identifier (non-null in observed rows)."
+          - name: visitId
+            description: "Visit identifier (non-null in observed rows)."
+          - name: date
+            description: "Session date as YYYYMMDD string."

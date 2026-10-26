@@ -1,0 +1,13 @@
+mlops:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DBT_DUCKDB_PATH', 'warehouse/dbt.duckdb') }}"
+      threads: 4
+      extensions:
+        - ducklake
+      attach:
+        - path: "ducklake:warehouse/ducklake/catalog.duckdb"
+          alias: ducklake
+          is_ducklake: true
