@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.class
+.venv/
+venv/
+.env
+.env.local
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Data & artifacts (ignore contents, keep needed .gitkeep placeholders)
+data/raw/ga_sessions/*
+data/interim/*
+data/processed/*
+data/simulated/*
+!data/*/.gitkeep
+!data/.gitkeep
+warehouse/
+models/
+artifacts/
+
+# Generated reports (keep provenance record)
+reports/*.csv
+reports/*.html
+!reports/provenance.json
+
+# dbt
+dbt_project/target/
+dbt_project/dbt_packages/
+
+# Airflow
+dags/__pycache__/
+airflow/logs/
+airflow/plugins/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Notebooks
+.notebooks/
+.ipynb_checkpoints/
+
+# Session exports (ignore contents, keep directory marker)
+sessions/*
+!sessions/.gitkeep

@@ -1,0 +1,11 @@
+# Drift monitoring config
+reference:
+  version: "0.0.0"
+  path: ""
+
+drift:
+  min_samples: 100
+  alert_bounded_labels: true  # never use PII as labels
+
+labels:
+  require_observed: true  # mark concept drift pending if labels missing

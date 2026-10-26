@@ -1,0 +1,26 @@
+# Application config (non-sensitive). Bind to localhost only.
+app:
+  host: 127.0.0.1
+
+# Dataset provenance placeholders
+dataset:
+  source: bigquery-public-data.google_analytics_sample.ga_sessions_*
+  acquisition_path: ""
+  license_terms_url: ""
+  retrieved_at: ""
+
+# Features/schema placeholders
+features:
+  required: []
+  categorical: []
+  numeric: []
+
+# Model config
+model:
+  version: "0.0.0"
+  artifact_dir: "./artifacts"
+# Dataset provenance (Stage 1)
+Source: bigquery-public-data.google_analytics_sample.ga_sessions_*
+Intent: investigate legitimate no-cost acquisition (static export/mirror) first. Avoid paid GCP queries.
+
+Planned split: train/eval by quarters/years to enable drift detection across time periods.

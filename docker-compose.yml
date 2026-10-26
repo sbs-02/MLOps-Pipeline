@@ -1,0 +1,59 @@
+# Local-only POC stack. Bind to localhost; do not expose externally.
+version: '3.8'
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mlops_prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: mlops_grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin  # change on first use; POC only
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  airflow-webserver:
+    image: apache/airflow:2.10.4
+    container_name: mlops_airflow_web
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'False'
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+    restart: unless-stopped
+
+  airflow-scheduler:
+    image: apache/airflow:2.10.4
+    container_name: mlops_airflow_sched
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+    restart: unless-stopped
+    depends_on:
+      - airflow-webserver
+
+volumes:
+  grafana_data:

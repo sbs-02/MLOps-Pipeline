@@ -1,0 +1,67 @@
+{
+  "source": "bigquery-public-data.google_analytics_sample.ga_sessions_*",
+  "acquisition_status": "downloaded",
+  "provenance_recorded_at": "2026-10-15",
+  "raw_data_path": "data/raw/ga_sessions",
+  "total_rows": 903653,
+  "distinct_sessions": 902755,
+  "total_transaction_sessions": 11552,
+  "date_range": [
+    "20160801",
+    "20170801"
+  ],
+  "files": [
+    {
+      "quarter": "2016Q3",
+      "file": "2016Q3.parquet",
+      "manifest": "2016Q3.manifest.json",
+      "rows": 145791,
+      "first_day": "20160801",
+      "last_day": "20160930",
+      "transaction_sessions": 2015,
+      "checksum_verified": true
+    },
+    {
+      "quarter": "2016Q4",
+      "file": "2016Q4.parquet",
+      "manifest": "2016Q4.manifest.json",
+      "rows": 290602,
+      "first_day": "20161001",
+      "last_day": "20161231",
+      "transaction_sessions": 3186,
+      "checksum_verified": true
+    },
+    {
+      "quarter": "2017Q1",
+      "file": "2017Q1.parquet",
+      "manifest": "2017Q1.manifest.json",
+      "rows": 196817,
+      "first_day": "20170101",
+      "last_day": "20170331",
+      "transaction_sessions": 2288,
+      "checksum_verified": true
+    },
+    {
+      "quarter": "2017Q2",
+      "file": "2017Q2.parquet",
+      "manifest": "2017Q2.manifest.json",
+      "rows": 196075,
+      "first_day": "20170401",
+      "last_day": "20170630",
+      "transaction_sessions": 2989,
+      "checksum_verified": true
+    },
+    {
+      "quarter": "2017Q3",
+      "file": "2017Q3.parquet",
+      "manifest": "2017Q3.manifest.json",
+      "rows": 74368,
+      "first_day": "20170701",
+      "last_day": "20170801",
+      "transaction_sessions": 1074,
+      "checksum_verified": true
+    }
+  ],
+  "split_strategy": "quarterly/yearly by session date/visitStartTime for drift detection",
+  "notes": "Downloaded via approved BigQuery export from bigquery-public-data.google_analytics_sample.ga_sessions_* with a 2 GiB per-quarter byte cap. Raw files are immutable and ignored by Git; move to canonical data/raw/ga_sessions completed on 2026-10-15. Checksums verified against per-quarter manifests."
+}
