@@ -79,6 +79,18 @@ One entry per gate: date, status, commit, and what was verified.
 - Generated dbt docs locally (`dbt_project/target/catalog.json`, Git-ignored).
 - Wrote `reports/dbt_docs.md`.
 
+## Gate 7 - train the purchase-conversion baseline model (2026-10-26)
+
+- Implemented `src/analytics_ml/training/train.py` (load, split, build, train, evaluate,
+  save artifacts, write report) and `notebooks/04_train_baseline.ipynb`.
+- Label: `conversion_label = totals.transactions IS NOT NULL` (1.28% prevalence).
+- Time-based split: train 828,492 (10,462 positives), test 74,263 (1,067 positives).
+- Baseline logistic regression (class_weight='balanced'): PR-AUC 0.4018, ROC-AUC 0.9844,
+  precision 0.2216, recall 0.9738, F1 0.3610 at threshold 0.5.
+- Artifacts saved to `models/` (Git-ignored); metrics report at `reports/model_baseline.md`.
+- Added `tests/unit/test_training.py` (4) and `tests/integration/test_training_smoke.py` (1).
+- Leakage check passes (no identifiers/target/split key/transaction fields in features).
+
 ## Next
 
-Gate 7 - define and train the purchase-conversion model (after Gate 6 is committed and approved).
+Gate 8 - build the BentoML prediction API (after Gate 7 is committed and approved).
