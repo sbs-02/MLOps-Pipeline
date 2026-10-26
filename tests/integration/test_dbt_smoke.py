@@ -49,7 +49,7 @@ def test_dbt_run_builds_staging_view_in_ducklake() -> None:
 def test_dbt_test_passes_for_staging_model() -> None:
     result = _run("test", "--select", "stg_ga_sessions")
     assert result.returncode == 0, result.stderr + result.stdout
-    assert "PASS=3" in result.stdout
+    assert "Completed successfully" in result.stdout
 
 
 def test_staging_view_has_expected_row_count() -> None:

@@ -22,6 +22,10 @@ models:
       +materialized: view
       +schema: stg
       +database: ducklake
+    intermediate:
+      +materialized: view
+      +schema: intermediate
+      +database: ducklake
     marts:
       +materialized: table
       +schema: marts

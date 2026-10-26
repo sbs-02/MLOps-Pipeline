@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: int_session_behavior
+    description: "Session-level features available at prediction time."
+    columns:
+      - name: fullVisitorId
+        tests: [not_null]
+      - name: visitId
+        tests: [not_null]
+      - name: hits
+        tests:
+          - not_null
+      - name: pageviews
+        tests:
+          - not_null
+      - name: time_on_site
+        tests:
+          - not_null

@@ -18,3 +18,16 @@ models:
           - not_null
       - name: is_conversion
         description: "Target label: session had at least one transaction."
+
+  - name: stg_transactions
+    description: "One row per converting session with its transaction fields."
+    columns:
+      - name: fullVisitorId
+        tests: [not_null]
+      - name: visitId
+        tests: [not_null]
+      - name: transaction_count
+        description: "Number of transactions in the session."
+        tests: [not_null]
+      - name: transaction_revenue_micros
+        description: "Revenue in micros for the session."

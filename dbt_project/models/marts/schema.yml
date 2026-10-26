@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: fct_session_conversion
+    description: "One row per unique session with prediction-time features and the conversion label."
+    columns:
+      - name: fullVisitorId
+        tests: [not_null]
+      - name: visitId
+        tests: [not_null]
+      - name: date
+        tests: [not_null]
+      - name: conversion_label
+        description: "Target label: session had at least one transaction."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: hits
+        tests:
+          - not_null
+      - name: pageviews
+        tests:
+          - not_null

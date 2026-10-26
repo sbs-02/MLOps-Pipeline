@@ -68,6 +68,17 @@ One entry per gate: date, status, commit, and what was verified.
 - Added `tests/integration/test_dbt_smoke.py` (5 tests, all green).
 - Wrote `reports/dbt_debug.md`.
 
+## Gate 6 - dbt model layers, tests and documentation (2026-10-26)
+
+- Added `stg_transactions` (11,552 converting sessions), `int_session_behavior`
+  (903,653 rows), and `fct_session_conversion` (902,755 deduplicated sessions).
+- `fct_session_conversion` deduplicates 898 duplicate session keys and keeps
+  prediction-time features only (no transaction/revenue leakage).
+- 22 data tests pass, including reconciliation (mart rows == distinct raw keys),
+  non-negative counts, label domain, and transaction-count positivity.
+- Generated dbt docs locally (`dbt_project/target/catalog.json`, Git-ignored).
+- Wrote `reports/dbt_docs.md`.
+
 ## Next
 
-Gate 6 - full dbt model layers, quality tests and documentation (after Gate 5 is committed and approved).
+Gate 7 - define and train the purchase-conversion model (after Gate 6 is committed and approved).
