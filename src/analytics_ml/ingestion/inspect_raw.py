@@ -9,108 +9,123 @@ import duckdb
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 RAW_GLOB = (PROJECT_ROOT / "data" / "raw" / "ga_sessions" / "*.parquet").as_posix()
+RAW_GLOB_LABEL = "data/raw/ga_sessions/*.parquet"
 MANIFEST_DIR = PROJECT_ROOT / "data" / "raw" / "ga_sessions"
 REPORT_PATH = PROJECT_ROOT / "reports" / "schema_quality.md"
 
+KEY_FIELDS = (
+    "visitorId",
+    "visitNumber",
+    "visitId",
+    "visitStartTime",
+    "date",
+    "fullVisitorId",
+    "channelGrouping",
+    "socialEngagementType",
+    "totals",
+    "trafficSource",
+    "device",
+    "geoNetwork",
+    "hits",
+    "customDimensions",
+)
 
-def _fetchdict(query: str) -> dict:
-    return duckdb.connect().execute(query).fetchdf().iloc[0].to_dict()
 
-
-def main() -> None:
-    con = duckdb.connect()
-    raw_exists = list(MANIFEST_DIR.glob("*.parquet"))
-    if not raw_exists:
+def inspect_raw() -> dict[str, object]:
+    """Inspect the raw Parquet files and return the observed facts (no files written)."""
+    if not list(MANIFEST_DIR.glob("*.parquet")):
         raise FileNotFoundError(f"No raw Parquet files found under {MANIFEST_DIR}")
 
-    overall = con.execute(f"""
-        SELECT
-            count(*) AS sessions,
-            count(DISTINCT (fullVisitorId, visitId)) AS distinct_sessions,
-            min(date) AS first_day,
-            max(date) AS last_day,
-            count(*) FILTER (WHERE totals.transactions IS NOT NULL) AS transaction_sessions,
-            sum(coalesce(totals.transactionRevenue, 0)) AS transaction_revenue_micros
-        FROM '{RAW_GLOB}'
-    """).fetchdf().iloc[0].to_dict()
+    con = duckdb.connect()
+    try:
+        overall = con.execute(
+            f"""
+            SELECT
+                count(*) AS sessions,
+                count(DISTINCT (fullVisitorId, visitId)) AS distinct_sessions,
+                min(date) AS first_day,
+                max(date) AS last_day,
+                count(*) FILTER (WHERE totals.transactions IS NOT NULL) AS transaction_sessions,
+                sum(coalesce(totals.transactionRevenue, 0)) AS transaction_revenue_micros
+            FROM '{RAW_GLOB}'
+            """
+        ).fetchdf().iloc[0].to_dict()
 
-    quarter_rows = con.execute(f"""
-        SELECT
-            substr(date, 1, 4) AS year,
-            CAST(floor((CAST(substr(date, 5, 2) AS INTEGER) - 1) / 3.0) AS INTEGER) + 1 AS q_num,
-            count(*) AS sessions,
-            count(DISTINCT (fullVisitorId, visitId)) AS distinct_sessions,
-            count(*) FILTER (WHERE totals.transactions IS NOT NULL) AS transaction_sessions,
-            min(date) AS first_day,
-            max(date) AS last_day
-        FROM '{RAW_GLOB}'
-        GROUP BY 1, 2
-        ORDER BY 1, 2
-    """).fetchdf()
-
-    # Rename quarter label to include Q prefix.
-    quarter_rows["quarter"] = (
-        quarter_rows["year"].astype(str) + "Q" + quarter_rows["q_num"].astype(int).astype(str)
-    )
-
-    key_fields = [
-        "visitorId",
-        "visitNumber",
-        "visitId",
-        "visitStartTime",
-        "date",
-        "fullVisitorId",
-        "channelGrouping",
-        "socialEngagementType",
-        "totals",
-        "trafficSource",
-        "device",
-        "geoNetwork",
-        "hits",
-        "customDimensions",
-    ]
-    null_rows = []
-    for field in key_fields:
-        null_count = con.execute(
-            f"SELECT count(*) FILTER (WHERE {field} IS NULL) AS n FROM '{RAW_GLOB}'"
-        ).fetchone()[0]
-        null_rows.append((field, int(null_count)))
-
-    hit_stats = con.execute(f"""
-        SELECT
-            avg(coalesce(len(hits), 0)) AS avg_hits,
-            min(coalesce(len(hits), 0)) AS min_hits,
-            max(coalesce(len(hits), 0)) AS max_hits
-        FROM '{RAW_GLOB}'
-    """).fetchdf().iloc[0].to_dict()
-
-    schema = con.execute(f"DESCRIBE SELECT * FROM '{RAW_GLOB}'").fetchdf()
-
-    manifests = sorted(MANIFEST_DIR.glob("*.manifest.json"))
-    manifest_summary = []
-    for m in manifests:
-        info = json.loads(m.read_text(encoding="utf-8"))
-        manifest_summary.append(
-            f"| {info['quarter']} | {info['rows']} | {info['first_day'] if 'first_day' in info else info['range'][0]} | "
-            f"{info['last_day'] if 'last_day' in info else info['range'][1]} | verified |"
-        )
-    # Manifests store ranges rather than separate first/last fields; use their range arrays.
-    manifest_summary = []
-    for m in manifests:
-        info = json.loads(m.read_text(encoding="utf-8"))
-        manifest_summary.append(
-            f"| {info['quarter']} | {info['rows']} | {info['range'][0]} | {info['range'][1]} | verified |"
+        quarter_rows = con.execute(
+            f"""
+            SELECT
+                substr(date, 1, 4) AS year,
+                CAST(floor((CAST(substr(date, 5, 2) AS INTEGER) - 1) / 3.0) AS INTEGER) + 1 AS q_num,
+                count(*) AS sessions,
+                count(DISTINCT (fullVisitorId, visitId)) AS distinct_sessions,
+                count(*) FILTER (WHERE totals.transactions IS NOT NULL) AS transaction_sessions,
+                min(date) AS first_day,
+                max(date) AS last_day
+            FROM '{RAW_GLOB}'
+            GROUP BY 1, 2
+            ORDER BY 1, 2
+            """
+        ).fetchdf()
+        quarter_rows["quarter"] = (
+            quarter_rows["year"].astype(str)
+            + "Q"
+            + quarter_rows["q_num"].astype(int).astype(str)
         )
 
-    duplicate_session_rows = int(
-        overall["sessions"] - overall["distinct_sessions"]
-    )
+        null_rows = []
+        for field in KEY_FIELDS:
+            null_count = con.execute(
+                f"SELECT count(*) FILTER (WHERE {field} IS NULL) AS n FROM '{RAW_GLOB}'"
+            ).fetchone()[0]
+            null_rows.append((field, int(null_count)))
+
+        hit_stats = con.execute(
+            f"""
+            SELECT
+                avg(coalesce(len(hits), 0)) AS avg_hits,
+                min(coalesce(len(hits), 0)) AS min_hits,
+                max(coalesce(len(hits), 0)) AS max_hits
+            FROM '{RAW_GLOB}'
+            """
+        ).fetchdf().iloc[0].to_dict()
+
+        schema = con.execute(f"DESCRIBE SELECT * FROM '{RAW_GLOB}'").fetchdf()
+    finally:
+        con.close()
+
+    manifest_summary = []
+    for manifest in sorted(MANIFEST_DIR.glob("*.manifest.json")):
+        info = json.loads(manifest.read_text(encoding="utf-8"))
+        manifest_summary.append(
+            f"| {info['quarter']} | {info['rows']} | {info['range'][0]} | "
+            f"{info['range'][1]} | verified |"
+        )
+
+    return {
+        "overall": overall,
+        "quarter_rows": quarter_rows,
+        "null_rows": null_rows,
+        "hit_stats": hit_stats,
+        "schema": schema,
+        "manifest_summary": manifest_summary,
+    }
+
+
+def render_report(result: dict[str, object]) -> str:
+    overall = result["overall"]
+    quarter_rows = result["quarter_rows"]
+    null_rows = result["null_rows"]
+    hit_stats = result["hit_stats"]
+    schema = result["schema"]
+    manifest_summary = result["manifest_summary"]
+
+    duplicate_session_rows = int(overall["sessions"]) - int(overall["distinct_sessions"])
 
     lines = [
         "# Schema and quality report: Google Analytics sample",
         "",
-        f"Source wildcard: `bigquery-public-data.google_analytics_sample.ga_sessions_*`",
-        f"Raw file glob: `{RAW_GLOB}`",
+        "Source wildcard: `bigquery-public-data.google_analytics_sample.ga_sessions_*`",
+        f"Raw file glob: `{RAW_GLOB_LABEL}`",
         "",
         "## Overall counts",
         "",
@@ -119,8 +134,10 @@ def main() -> None:
         f"- Duplicate session keys: **{duplicate_session_rows:,}**",
         f"- Date range: **{overall['first_day']} -> {overall['last_day']}**",
         f"- Sessions with `totals.transactions`: **{int(overall['transaction_sessions']):,}**",
-        f"- Transaction-session rate: **{int(overall['transaction_sessions']) / int(overall['sessions']):.4%}**",
-        f"- Sum of `totals.transactionRevenue`: **{int(overall['transaction_revenue_micros']):,}** micros",
+        f"- Transaction-session rate: "
+        f"**{int(overall['transaction_sessions']) / int(overall['sessions']):.4%}**",
+        f"- Sum of `totals.transactionRevenue`: "
+        f"**{int(overall['transaction_revenue_micros']):,}** micros",
         "",
         "## Per-quarter counts",
         "",
@@ -177,14 +194,31 @@ def main() -> None:
             "- Raw files are treated as immutable source inputs.",
             "- Nested BigQuery structures are preserved as DuckDB/Parquet-compatible structs and lists.",
             "- `totals.transactions IS NOT NULL` is used as the session-level purchase-conversion proxy.",
-            "- `visitorId` is null in every observed raw row, so `fullVisitorId` and `visitId` are the usable session identity fields.",
-            "- Duplicate session keys are reported but not removed in the raw layer; cleaning/normalization belongs in the transformation layer.",
+            "- `visitorId` is null in every observed raw row, so `fullVisitorId` and `visitId` are "
+            "the usable session identity fields.",
+            "- Duplicate session keys are reported but not removed in the raw layer; "
+            "cleaning/normalization belongs in the transformation layer.",
+            "",
         ]
     )
+    return "\n".join(lines)
 
+
+def write_report(result: dict[str, object] | None = None) -> Path:
+    data = result if result is not None else inspect_raw()
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    REPORT_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"Wrote {REPORT_PATH}")
+    REPORT_PATH.write_text(render_report(data), encoding="utf-8")
+    return REPORT_PATH
+
+
+def main() -> None:
+    result = inspect_raw()
+    path = write_report(result)
+    overall = result["overall"]
+    print(f"Rows: {int(overall['sessions']):,}")
+    print(f"Distinct sessions: {int(overall['distinct_sessions']):,}")
+    print(f"Transaction sessions: {int(overall['transaction_sessions']):,}")
+    print(f"Wrote {path}")
 
 
 if __name__ == "__main__":

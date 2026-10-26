@@ -39,6 +39,23 @@ One entry per gate: date, status, commit, and what was verified.
 - Verified: `pip check` clean, 47/47 tests pass, and a **fresh venv rebuilt from
   `requirements.lock` produces a byte-identical package set** and passes the same tests.
 
+## Gate 4 — DuckLake verification (2026-10-26)
+
+- Created `notebooks/02_ingest_schema_inspect.ipynb` (22 cells) combining raw schema
+  inspection and DuckLake ingest, with reusable logic in `src/analytics_ml`.
+- Refactored `ducklake_setup.py` (attach/create/metrics/reopen/idempotency/versions/
+  run_verification/report) and `inspect_raw.py` (inspect/render/write functions).
+- Created `tests/integration/test_ducklake.py` (6 tests: create, reopen in a subprocess,
+  idempotency, schema, versions, read-only warehouse reconciliation, report hygiene).
+- Verified against the real catalog: **903,653 rows**, **902,755 distinct**, **11,552**
+  transaction sessions, dates **20160801 -> 20170801**, all 5 quarters match.
+- Reopen in a fresh process returns the same counts and snapshot id **2**.
+- Re-running the ingest is a no-op: no new rows, no new snapshot (3 snapshots before/after).
+- Version record: DuckDB **1.5.6**, DuckLake extension build **ac7595b0**, catalog spec **1.0**.
+- DuckLake 1.1 requires DuckDB >= 2.0.0, so the upgrade stays deferred; dbt-duckdb 1.11.0
+  declares `duckdb>=1.0.0` with no upper bound but pins 1.5.5 in its `md` extra.
+- Wrote `reports/ducklake_verification.md` (overall PASS).
+
 ## Next
 
-Gate 4 — DuckLake verification (notebook `02_*`), after Gate 3 is committed and approved.
+Gate 5 - dbt transformations and data quality (after Gate 4 is committed and approved).
