@@ -1,0 +1,103 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: "Model Drift Alerts"
+    folder: "MLOps Alerts"
+    interval: "30s"
+    rules:
+      - uid: "alert-data-drift-detected"
+        title: "Model Data Drift Detected"
+        condition: "B"
+        for: "30s"
+        labels:
+          severity: "warning"
+          team: "mlops"
+        annotations:
+          summary: "Input feature distribution drift detected"
+          description: "Significant covariate shift detected across >= 30% of input features against reference window."
+          runbook_url: "http://127.0.0.1:8000/approvals/pending?alert_id=alert-data-drift-detected"
+        data:
+          - refId: "A"
+            queryType: ""
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: "Prometheus"
+            model:
+              editorMode: "code"
+              expr: "model_data_drift_detected == 1"
+              instant: true
+              range: false
+              refId: "A"
+          - refId: "B"
+            queryType: ""
+            datasourceUid: "__expr__"
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: "gt"
+                  operator:
+                    type: "and"
+                  query:
+                    params: ["A"]
+                  reducer:
+                    params: []
+                    type: "last"
+                  type: "query"
+              datasource:
+                name: "Expression"
+                type: "__expr__"
+                uid: "__expr__"
+              expression: "A"
+              refId: "B"
+              type: "threshold"
+
+      - uid: "alert-concept-drift-degraded"
+        title: "Model Quality Degraded (Concept Drift)"
+        condition: "B"
+        for: "30s"
+        labels:
+          severity: "critical"
+          team: "mlops"
+        annotations:
+          summary: "Model F1 performance degraded below acceptable threshold"
+          description: "Observed ground-truth labels indicate model F1 has dropped by > 15% from baseline (0.3688)."
+          runbook_url: "http://127.0.0.1:8000/approvals/pending?alert_id=alert-concept-drift-degraded"
+        data:
+          - refId: "A"
+            queryType: ""
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: "Prometheus"
+            model:
+              editorMode: "code"
+              expr: "model_concept_drift_status == 2"
+              instant: true
+              range: false
+              refId: "A"
+          - refId: "B"
+            queryType: ""
+            datasourceUid: "__expr__"
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: "gt"
+                  operator:
+                    type: "and"
+                  query:
+                    params: ["A"]
+                  reducer:
+                    params: []
+                    type: "last"
+                  type: "query"
+              datasource:
+                name: "Expression"
+                type: "__expr__"
+                uid: "__expr__"
+              expression: "A"
+              refId: "B"
+              type: "threshold"

@@ -47,6 +47,7 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = [".", "src"]
 addopts = "-q"
 
 [tool.setuptools.packages.find]

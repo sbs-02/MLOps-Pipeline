@@ -1,11 +1,24 @@
-# Drift monitoring config
+# Drift monitoring configuration (Gate 10)
 reference:
-  version: "0.0.0"
-  path: ""
+  dataset_version: "ducklake-spec-1.0-snapshot-2"
+  split_column: "date"
+  train_cutoff: "20170401"
+  description: "Training window 2016-08-01 through 2017-03-31"
 
-drift:
+data_drift:
   min_samples: 100
-  alert_bounded_labels: true  # never use PII as labels
+  p_value_threshold: 0.05
+  drift_share_threshold: 0.30  # Declare dataset drift if >= 30% of features drift
+  methods:
+    numeric: "kolmogorov_smirnov"  # Two-sample KS test
+    categorical: "jensen_shannon"   # Jensen-Shannon distance threshold 0.15
+  categorical_js_threshold: 0.15
 
-labels:
-  require_observed: true  # mark concept drift pending if labels missing
+concept_drift:
+  require_observed_labels: true   # Mark pending if labels are missing
+  f1_degradation_threshold: 0.15 # Flag degradation if F1 drops by > 15% from baseline
+  baseline_f1: 0.3688
+  baseline_pr_auc: 0.4026
+
+privacy:
+  alert_bounded_labels: true      # Never use user PII or IDs as metric labels

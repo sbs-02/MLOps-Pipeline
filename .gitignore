@@ -27,6 +27,7 @@ artifacts/
 # Generated reports (keep provenance record)
 reports/*.csv
 reports/*.html
+reports/retraining_audit.json
 !reports/provenance.json
 
 # dbt

@@ -16,7 +16,7 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin  # change on first use; POC only
+      - GF_SECURITY_ADMIN_PASSWORD=admin # change on first use; POC only
       - GF_AUTH_ANONYMOUS_ENABLED=false
     volumes:
       - grafana_data:/var/lib/grafana
@@ -30,12 +30,14 @@ services:
     image: apache/airflow:2.10.4
     container_name: mlops_airflow_web
     environment:
-      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'False'
+    command: [ "bash", "-c", "airflow db migrate && (airflow users create --username admin --firstname Admin --lastname User --role Admin --email admin@example.com --password admin || true) && airflow webserver" ]
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
+      - airflow_home:/opt/airflow
       - ./dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
@@ -45,9 +47,11 @@ services:
     image: apache/airflow:2.10.4
     container_name: mlops_airflow_sched
     environment:
-      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+    command: [ "bash", "-c", "airflow db migrate || true; airflow scheduler" ]
     volumes:
+      - airflow_home:/opt/airflow
       - ./dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
@@ -57,3 +61,4 @@ services:
 
 volumes:
   grafana_data:
+  airflow_home:

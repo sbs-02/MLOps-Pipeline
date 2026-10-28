@@ -9,10 +9,15 @@ scrape_configs:
   # Local services only (bounded-cardinality targets only)
   - job_name: 'prediction_service'
     static_configs:
-      - targets: ['127.0.0.1:3001']
+      - targets: ['127.0.0.1:3001', 'host.docker.internal:3001']
+    metrics_path: /metrics
+
+  - job_name: 'drift_monitoring'
+    static_configs:
+      - targets: ['127.0.0.1:8001', 'host.docker.internal:8001']
     metrics_path: /metrics
 
   - job_name: 'approval_service'
     static_configs:
-      - targets: ['127.0.0.1:8000']
+      - targets: ['127.0.0.1:8000', 'host.docker.internal:8000']
     metrics_path: /metrics
