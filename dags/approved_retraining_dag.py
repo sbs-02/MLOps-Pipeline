@@ -24,14 +24,8 @@ except ImportError:
     DAG = Any  # type: ignore[misc,assignment]
     PythonOperator = Any  # type: ignore[misc,assignment]
 
-from analytics_ml.approval.store import ApprovalStore
-from analytics_ml.retraining.pipeline import (
-    DEFAULT_AUDIT_LOG_PATH,
-    DEFAULT_CATALOG_PATH,
-    DEFAULT_MODELS_DIR,
-    RetrainingConfig,
-    RetrainingEngine,
-)
+# Imports are deferred to task runtime so the DAG can be parsed even when the
+# analytics_ml package is not installed in the Airflow container image.
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -42,6 +36,8 @@ def task_verify_authorization(**context: Any) -> dict[str, Any]:
     Extracts approval credentials from dag_run.conf.
     If credentials are missing, expired, or invalid, aborts execution immediately.
     """
+    from analytics_ml.approval.store import ApprovalStore
+
     dag_run = context.get("dag_run")
     conf = getattr(dag_run, "conf", {}) or {}
 
@@ -73,6 +69,8 @@ def task_verify_authorization(**context: Any) -> dict[str, Any]:
 
 def task_consume_authorization(**context: Any) -> None:
     """Task 2: Atomically consume authorization token so it cannot be re-used."""
+    from analytics_ml.approval.store import ApprovalStore
+
     ti = context.get("ti")
     auth_data = ti.xcom_pull(task_ids="verify_authorization") if ti else None
     if not auth_data:
@@ -91,6 +89,8 @@ def task_consume_authorization(**context: Any) -> None:
 
 def task_validate_data_batch(**context: Any) -> int:
     """Task 3: Validate DuckLake mart table exists and meets row count threshold."""
+    from analytics_ml.retraining.pipeline import RetrainingConfig, RetrainingEngine
+
     config = RetrainingConfig(approval_id="precheck", authorized_run_id="precheck", strict_raise=True)
     engine = RetrainingEngine(config=config)
     row_count = engine.validate_batch_quality(min_rows=1000)
@@ -100,6 +100,15 @@ def task_validate_data_batch(**context: Any) -> int:
 
 def task_execute_retraining(**context: Any) -> dict[str, Any]:
     """Task 4: Execute candidate model training, evaluation, and safe promotion."""
+    from analytics_ml.approval.store import ApprovalStore
+    from analytics_ml.retraining.pipeline import (
+        DEFAULT_AUDIT_LOG_PATH,
+        DEFAULT_CATALOG_PATH,
+        DEFAULT_MODELS_DIR,
+        RetrainingConfig,
+        RetrainingEngine,
+    )
+
     ti = context.get("ti")
     auth_data = ti.xcom_pull(task_ids="verify_authorization") if ti else None
     if not auth_data:
@@ -157,7 +166,7 @@ def task_record_audit(**context: Any) -> None:
         logger.warning("No retraining outcome data found to record in audit")
         return
 
-    from analytics_ml.retraining.pipeline import RetrainingOutcome
+    from analytics_ml.retraining.pipeline import RetrainingConfig, RetrainingEngine, RetrainingOutcome
     outcome = RetrainingOutcome(**outcome_data)
     config = RetrainingConfig(approval_id="audit", authorized_run_id="audit")
     engine = RetrainingEngine(config=config)
